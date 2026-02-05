@@ -3,6 +3,9 @@
 该脚本会定时检测外网连通性，发现断网后自动打开校园网登录页面，填充账号密码并点击登录。支持系统托盘图标，后台持续监控。
 
 ## 打包文件(文件太大传不上来)
+可在控制台运行
+pyinstaller --onefile --noconsole auto_login_portal.py --hidden-import=pystray --hidden-import=PIL --hidden-import=playwright.sync_api
+自行打包
 输出文件在 `dist/auto_login_portal.exe`，已包含环境和浏览器内核，可直接运行。
 
 注意事项：
