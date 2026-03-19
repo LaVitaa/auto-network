@@ -32,6 +32,9 @@ CHECK_HOST = "223.5.5.5"  # 阿里 DNS，国内访问稳定；也可以用 8.8.8
 
 # 凭据存储文件
 CREDENTIALS_FILE = "login_credentials.json"
+LOG_FILE = "auto_login.log"
+
+
 
 def save_credentials(username, password):
     """保存用户凭据到文件"""
@@ -166,7 +169,9 @@ def create_tray_icon(stop_event):
         stop_event.set()
         icon.stop()
 
-    menu = pystray.Menu(pystray.MenuItem("Exit", on_exit))
+    menu = pystray.Menu(
+        pystray.MenuItem("Exit", on_exit),
+    )
     icon = pystray.Icon("auto_login_portal", image, "校园网自动登录", menu)
     return icon
 
@@ -303,21 +308,23 @@ def auto_login():
     return False
 
 def monitor_loop(stop_event):
-    print("=== 校园网自动登录监控程序 ===")
-    print("网络监控已启动，可从托盘图标退出...")
-    print(f"检测目标: {CHECK_HOST}")
+    write_log("=== 校园网自动登录监控程序 ===")
+    write_log("网络监控已启动，可从托盘图标退出...")
+    write_log(f"检测目标: {CHECK_HOST}")
+
+    trigger_count = 0
+    write_log("历史断网触发次数: 本次运行内统计")
 
     # 首次运行时预先获取凭据（如果需要）
-    print(f"\n[{time.strftime('%Y-%m-%d %H:%M:%S')}] 检查登录凭据...")
+    write_log("检查登录凭据...")
     username, password = load_credentials()
     if not username or not password:
-        print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] 首次运行，请设置登录凭据（用于备用自动登录）")
+        write_log("首次运行，请设置登录凭据（用于备用自动登录）")
         get_user_credentials()
     else:
-        print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] 已加载保存的登录凭据")
+        write_log("已加载保存的登录凭据")
 
-    print(f"\n开始监控...\n")
-
+    write_log("开始监控...")
     was_down = False  # 记录上次是否断网，避免重复打开页面
 
     while not stop_event.is_set():
@@ -326,33 +333,34 @@ def monitor_loop(stop_event):
 
             if not network_status:
                 if not was_down:
-                    print(f"\n{'='*50}")
-                    print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] 🚨 检测到网络断开！")
-                    print(f"{'='*50}")
+                    trigger_count += 1
+                    write_log("=" * 50)
+                    write_log(f"🚨 检测到网络断开！触发次数: {trigger_count}")
+                    write_log("=" * 50)
 
                     success = auto_login()
                     if success:
-                        print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] ✅ 自动登录成功")
+                        write_log("✅ 自动登录成功")
                         was_down = False  # 登录成功，重置状态
                     else:
-                        print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] ❌ 自动登录失败，将在下次检测时重试")
+                        write_log("❌ 自动登录失败，将在下次检测时重试")
                         was_down = True
                 else:
-                    print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] 📡 网络仍处于断开状态...")
+                    write_log("📡 网络仍处于断开状态...")
             else:
                 if was_down:
-                    print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] 🌐 网络已恢复连通！")
+                    write_log("🌐 网络已恢复连通！")
                 else:
-                    print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] ✓ 网络状态正常")
+                    write_log("✓ 网络状态正常")
                 was_down = False
 
             stop_event.wait(10)  # 每10秒检查一次
 
         except KeyboardInterrupt:
-            print(f"\n[{time.strftime('%Y-%m-%d %H:%M:%S')}] 用户主动停止监控")
+            write_log("用户主动停止监控")
             stop_event.set()
         except Exception as e:
-            print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] 监控过程出错: {e}")
+            write_log(f"监控过程出错: {e}")
             stop_event.wait(10)
 
 def main():

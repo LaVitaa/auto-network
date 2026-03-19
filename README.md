@@ -1,16 +1,26 @@
-# 校园网自动登录脚本
+# 上海大学校园网自动登录脚本
 
 该脚本会定时检测外网连通性，发现断网后自动打开校园网登录页面，填充账号密码并点击登录。支持系统托盘图标，后台持续监控。
 
-## 打包文件(文件太大传不上来)
-可在控制台运行
-pyinstaller --onefile --noconsole auto_login_portal.py --hidden-import=pystray --hidden-import=PIL --hidden-import=playwright.sync_api
-自行打包
-输出文件在 `dist/auto_login_portal.exe`，已包含环境和浏览器内核，可直接运行。
+## 打包文件
+最简单方式（默认使用系统 Edge/Chrome，不打包浏览器内核）：
+
+```powershell
+.\build.ps1
+```
+
+如需清理旧产物后再打包：
+
+```powershell
+.\build.ps1 -Clean
+```
+
+输出文件在 `dist/auto_login_portal.exe`。
 
 注意事项：
 
-- 文件体积较大（包含浏览器内核属于正常现象）
+- 打包体积较小（不包含浏览器内核）
+- 目标机器需安装 Microsoft Edge 或 Google Chrome
 - 运行时会在同目录生成 `login_credentials.json`（明文保存账号密码）
 - 如需更新账号密码，删除该文件后重新运行即可弹窗输入
 
@@ -18,7 +28,7 @@ pyinstaller --onefile --noconsole auto_login_portal.py --hidden-import=pystray -
 
 - 断网检测与自动登录
 - 账号密码弹窗输入并保存
-- Edge -> Chrome -> Chromium 启动兜底
+- Edge -> Chrome 启动兜底
 - 托盘图标一键退出
 
 ## 环境要求
@@ -60,27 +70,19 @@ python auto_login_portal.py
 
 ## 打包为 exe
 
-### 仅打包程序（体积小，但目标机需安装浏览器内核）
+### 仅打包程序（推荐，体积小）
 
 ```powershell
 pyinstaller --onefile --noconsole auto_login_portal.py --hidden-import=pystray --hidden-import=PIL --hidden-import=playwright.sync_api
 ```
 
-目标机需执行一次：
+目标机无需安装 Python 依赖，但需安装 Edge 或 Chrome。
+
+### 手动打包命令
 
 ```powershell
-playwright install msedge
-playwright install chrome
+pyinstaller --onefile --noconsole auto_login_portal.py --hidden-import=pystray --hidden-import=PIL --hidden-import=playwright.sync_api
 ```
-
-### 打包程序 + 浏览器内核（体积大，可直接运行）
-
-```powershell
-robocopy "$env:LOCALAPPDATA\ms-playwright" ".\playwright-browsers" /E
-pyinstaller --onefile --noconsole auto_login_portal.py --hidden-import=pystray --hidden-import=PIL --hidden-import=playwright.sync_api --add-data "playwright-browsers;playwright-browsers"
-```
-
-输出文件在 `dist/auto_login_portal.exe`。
 
 ## 常见问题
 
@@ -88,8 +90,7 @@ pyinstaller --onefile --noconsole auto_login_portal.py --hidden-import=pystray -
   - 当前 Python 环境未安装依赖，请执行 `pip install playwright`
 
 - 浏览器没有弹出或无法点击
-  - 请确认已执行 `playwright install msedge` 或 `playwright install chrome`
-  - 确保本机已安装 Edge/Chrome
+  - 确保本机已安装 Edge 或 Chrome
 
 - 登录后仍显示未联网
   - 可能校园网认证系统异常，建议稍后重试或修改 `CHECK_HOST`
